@@ -10,6 +10,19 @@ export class App extends React.Component {
     contacts: [],
     filter: '',
   };
+  componentDidMount() {
+    const savedContacts = localStorage.getItem('contacts');
+    if (savedContacts !== null) {
+      this.setState({
+        contacts: JSON.parse(savedContacts),
+      });
+    }
+  }
+  componentDidUpdate(_, prevState) {
+    if (prevState.contacts !== this.state.contacts) {
+      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
+    }
+  }
   formSubmit = newContact => {
     const { contacts } = this.state;
     contacts.find(
@@ -17,20 +30,29 @@ export class App extends React.Component {
         contact.name.toLocaleLowerCase() === newContact.name.toLocaleLowerCase()
     )
       ? Notiflix.Notify.failure(`${newContact.name} is already  in contacts.`)
-      : this.setState(prevState => ({
-          contacts: [...prevState.contacts, newContact],
-        }));
+      : this.setState(
+          prevState => ({
+            contacts: [...prevState.contacts, newContact],
+          }),
+          Notiflix.Notify.success(`you added a contact: ${newContact.name}`)
+        );
+  };
+  deleteContact = contactId => {
+    this.setState(
+      prevState => ({
+        contacts: prevState.contacts.filter(
+          contact => contact.id !== contactId
+        ),
+      }),
+      Notiflix.Notify.info('You have deleted a contact')
+    );
   };
   onSearch = event => {
     this.setState({
       filter: event.currentTarget.value,
     });
   };
-  deleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
-    }));
-  };
+
   filterContacts = () => {
     const { contacts, filter } = this.state;
     const normalize = filter.toLowerCase();
@@ -43,8 +65,7 @@ export class App extends React.Component {
   render() {
     const { contacts, filter } = this.state;
     return (
-      <Section>
-        <h1>Phonebook</h1>
+      <Section title="Phonebook">
         <ContactForm onSubmit={this.formSubmit} />
         {contacts.length > 0 && (
           <>

@@ -34,8 +34,8 @@ export class ContactForm extends Component {
     const { name, number } = this.state;
     return (
       <div>
-        <p className={css.name_form}> Name</p>
         <form onSubmit={this.handelSubmit} className={css.form_wrapper}>
+          <p className={css.name_form}> Name</p>
           <input
             type="text"
             name="name"
