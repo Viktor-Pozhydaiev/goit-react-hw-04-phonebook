@@ -1,83 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ContactForm } from './Form/ContactForm';
 import { Filter } from './Filter/Filter';
 import { ContactList } from './ContactList/ContactList';
 import { Section } from './Section/Section';
 import Notiflix from 'notiflix';
 
-export class App extends React.Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
-  componentDidMount() {
+export const App = () => {
+  const [contacts, setContacts] = useState(() => {
     const savedContacts = localStorage.getItem('contacts');
     if (savedContacts !== null) {
-      this.setState({
-        contacts: JSON.parse(savedContacts),
-      });
+      const parcedContacts = JSON.parse(savedContacts);
+      return parcedContacts;
     }
-  }
-  componentDidUpdate(_, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
-  formSubmit = newContact => {
-    const { contacts } = this.state;
+    return [];
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const [filter, setFilter] = useState('');
+
+  const formSubmit = newContact => {
     contacts.find(
       contact =>
         contact.name.toLocaleLowerCase() === newContact.name.toLocaleLowerCase()
     )
       ? Notiflix.Notify.failure(`${newContact.name} is already  in contacts.`)
-      : this.setState(
-          prevState => ({
-            contacts: [...prevState.contacts, newContact],
-          }),
+      : setContacts(
+          prevState => [newContact, ...prevState],
           Notiflix.Notify.success(`you added a contact: ${newContact.name}`)
         );
   };
-  deleteContact = contactId => {
-    this.setState(
-      prevState => ({
-        contacts: prevState.contacts.filter(
-          contact => contact.id !== contactId
-        ),
-      }),
+  const deleteContact = id => {
+    setContacts(
+      prevState => prevState.filter(contact => contact.id !== id),
+
       Notiflix.Notify.info('You have deleted a contact')
     );
   };
-  onSearch = event => {
-    this.setState({
-      filter: event.currentTarget.value,
-    });
+  const onSearch = event => {
+    setFilter(event.currentTarget.value);
   };
 
-  filterContacts = () => {
-    const { contacts, filter } = this.state;
-    const normalize = filter.toLowerCase();
-    const sortContacts = contacts.filter(({ name }) =>
-      name.toLowerCase().includes(normalize)
+  const filterContacts = () => {
+    const normalize = filter.toLocaleLowerCase();
+    const sortContacts = contacts.filter(contact =>
+      contact.name.toLocaleLowerCase().includes(normalize)
     );
     return sortContacts;
   };
 
-  render() {
-    const { contacts, filter } = this.state;
-    return (
-      <Section title="Phonebook">
-        <ContactForm onSubmit={this.formSubmit} />
-        {contacts.length > 0 && (
-          <>
-            <Filter value={filter} onSearch={this.onSearch} />
-            <ContactList
-              contacts={this.filterContacts()}
-              onDelete={this.deleteContact}
-              title="Contacts"
-            />
-          </>
-        )}
-      </Section>
-    );
-  }
-}
+  return (
+    <Section title="Phonebook">
+      <ContactForm onSubmit={formSubmit} />
+      {contacts.length > 0 && (
+        <>
+          <Filter value={filter} onSearch={onSearch} />
+          <ContactList
+            contacts={filterContacts()}
+            onDelete={deleteContact}
+            title="Contacts"
+          />
+        </>
+      )}
+    </Section>
+  );
+};
